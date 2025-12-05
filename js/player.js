@@ -21,6 +21,11 @@ video.preload = 'auto';
 video.setAttribute('x-webkit-airplay', 'allow');
 video.setAttribute('playsinline', '');
 
+video.addEventListener('error', (e) => {
+    console.error('Video error:', video.error);
+    loadingSpinner.classList.remove('show');
+});
+
 const bufferAhead = () => {
     if (video.buffered.length > 0) {
         const bufferedEnd = video.buffered.end(video.buffered.length - 1);
