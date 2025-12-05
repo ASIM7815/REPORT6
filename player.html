@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; overflow: hidden; }
+        #player { position: relative; width: 100vw; height: 100vh; }
+        video { width: 100%; height: 100%; object-fit: contain; }
+        #controls { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 20px; opacity: 0; transition: opacity 0.3s; }
+        #player:hover #controls, #controls.show { opacity: 1; }
+        #progress { width: 100%; height: 5px; background: rgba(255,255,255,0.3); cursor: pointer; margin-bottom: 10px; }
+        #progress-bar { height: 100%; background: #e50914; width: 0; }
+        #buttons { display: flex; gap: 15px; align-items: center; }
+        button { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; padding: 5px 10px; }
+        button:hover { color: #e50914; }
+        #time { color: #fff; margin-left: auto; }
+        #back { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div id="player">
+        <video id="video" src="https://storage.googleapis.com/asimsaadz/HIT.The.Third.Case.2025.1080p.NF.WEB-DL.DUAL.DDP5.1.x264-Vegamovies.is.mkv"></video>
+        <button id="back" onclick="history.back()">←</button>
+        <div id="controls">
+            <div id="progress" onclick="seek(event)">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="buttons">
+                <button id="play" onclick="togglePlay()">▶</button>
+                <button onclick="skip(-10)">⏪ 10s</button>
+                <button onclick="skip(10)">10s ⏩</button>
+                <button onclick="changeSpeed()">1x</button>
+                <button onclick="toggleFullscreen()">⛶</button>
+                <span id="time">0:00 / 0:00</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const play = document.getElementById('play');
+        const progressBar = document.getElementById('progress-bar');
+        const timeDisplay = document.getElementById('time');
+        const controls = document.getElementById('controls');
+        let speed = 1;
+
+        video.addEventListener('click', togglePlay);
+        video.addEventListener('timeupdate', () => {
+            progressBar.style.width = (video.currentTime / video.duration * 100) + '%';
+            timeDisplay.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+        });
+
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+                play.textContent = '⏸';
+            } else {
+                video.pause();
+                play.textContent = '▶';
+            }
+        }
+
+        function skip(sec) {
+            video.currentTime += sec;
+        }
+
+        function seek(e) {
+            const rect = e.target.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            video.currentTime = pos * video.duration;
+        }
+
+        function changeSpeed() {
+            speed = speed >= 2 ? 0.5 : speed + 0.25;
+            video.playbackRate = speed;
+            event.target.textContent = speed + 'x';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.getElementById('player').requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function formatTime(sec) {
+            if (isNaN(sec)) return '0:00';
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return m + ':' + (s < 10 ? '0' : '') + s;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+            if (e.key === 'ArrowLeft') skip(-10);
+            if (e.key === 'ArrowRight') skip(10);
+            if (e.key === 'f') toggleFullscreen();
+        });
+
+        let timeout;
+        document.getElementById('player').addEventListener('mousemove', () => {
+            controls.classList.add('show');
+            clearTimeout(timeout);
+            timeout = setTimeout(() => controls.classList.remove('show'), 3000);
+        });
+    </script>
+</body>
+</html>
