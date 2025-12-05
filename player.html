@@ -1,65 +1,463 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
+    <title>Video Player - HIT The Third Case</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; overflow: hidden; }
-        #player { position: relative; width: 100vw; height: 100vh; }
-        .video-js { width: 100%; height: 100%; }
-        .vjs-big-play-button { top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; }
-        #back { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); border: none; color: #fff; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; cursor: pointer; z-index: 1000; }
-        #back:hover { background: rgba(229,9,20,0.9); }
+        
+        body { 
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        #playerContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .video-js {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Enhanced Video.js styling */
+        .vjs-big-play-button {
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background-color: rgba(229, 9, 20, 0.9) !important;
+            border-radius: 50% !important;
+            width: 80px !important;
+            height: 80px !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .vjs-big-play-button:hover {
+            background-color: rgba(229, 9, 20, 1) !important;
+            transform: translate(-50%, -50%) scale(1.1) !important;
+        }
+
+        .vjs-control-bar {
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent) !important;
+            padding: 20px 15px 15px 15px !important;
+        }
+
+        .vjs-progress-control {
+            height: 8px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .vjs-progress-holder {
+            background: rgba(255,255,255,0.2) !important;
+            height: 8px !important;
+        }
+
+        .vjs-play-progress {
+            background: #e50914 !important;
+        }
+
+        .vjs-slider:focus {
+            text-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+        }
+
+        .vjs-button > .vjs-icon-placeholder::before {
+            font-size: 16px !important;
+        }
+
+        .vjs-current-time,
+        .vjs-duration,
+        .vjs-time-divider {
+            display: inline-block !important;
+            padding: 0 4px !important;
+            font-size: 13px !important;
+        }
+
+        /* Back button */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: #fff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-button:hover {
+            background: rgba(229, 9, 20, 0.9);
+            transform: scale(1.1);
+        }
+
+        .back-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Top info overlay */
+        .video-info-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            padding: 80px 40px 40px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .player-wrapper:hover .video-info-overlay {
+            opacity: 1;
+        }
+
+        .video-info-overlay.show {
+            opacity: 1;
+        }
+
+        .video-title {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Error message */
+        .error-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 10px;
+            color: #fff;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+            max-width: 500px;
+        }
+
+        .error-container.show {
+            display: block;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            color: #e50914;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            font-size: 14px;
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .error-retry-btn {
+            background: #e50914;
+            color: #fff;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .error-retry-btn:hover {
+            background: #c41812;
+        }
+
+        /* Keyboard shortcuts hint */
+        .shortcuts-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 500;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .shortcuts-hint.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #e50914;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 100;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .video-title {
+                font-size: 20px;
+            }
+
+            .back-button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .video-info-overlay {
+                padding: 60px 20px 20px;
+            }
+
+            .error-container {
+                padding: 30px 20px;
+                max-width: 90vw;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="player">
-        <button id="back" onclick="history.back()">←</button>
-        <video id="video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
-            <source src="https://storage.googleapis.com/asimsaadz/HIT.The.Third.Case.2025.1080p.NF.WEB-DL.DUAL.DDP5.1.x264-Vegamovies.is.mkv" type="video/mp4">
-        </video>
+    <div id="playerContainer">
+        <div class="player-wrapper">
+            <button class="back-button" id="backBtn" title="Go Back">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <div class="video-info-overlay" id="videoInfo">
+                <div class="video-title" id="videoTitle">HIT The Third Case</div>
+            </div>
+
+            <video id="video" class="video-js vjs-default-skin vjs-big-play-centered" 
+                   controls preload="auto" data-setup="{}">
+                <!-- Primary source -->
+                <source src="https://storage.cloud.google.com/asimsaadz/HIT.The.Third.Case.2025.1080p.NF.WEB-DL.DUAL.DDP5.1.x264-Vegamovies.is.mp4" 
+                        type="video/mp4">
+                <!-- Fallback for browsers that don't support mkv -->
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a web browser that
+                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+
+            <div class="error-container" id="errorContainer">
+                <div class="error-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <div class="error-title">Playback Error</div>
+                <div class="error-message" id="errorMessage">
+                    The video file cannot be played. This may be due to:
+                    <ul style="text-align: left; margin-top: 10px; padding-left: 20px;">
+                        <li>Browser compatibility issues</li>
+                        <li>Unsupported video format (.mkv)</li>
+                        <li>CORS restrictions</li>
+                        <li>Network connectivity</li>
+                    </ul>
+                </div>
+                <button class="error-retry-btn" onclick="retryPlayback()">Try Again</button>
+            </div>
+
+            <div class="loading-spinner" id="loadingSpinner" style="display: none;"></div>
+        </div>
     </div>
+
+    <div class="shortcuts-hint" id="shortcutsHint">
+        <strong>Keyboard Shortcuts:</strong><br>
+        Space: Play/Pause | ←/→: Seek 10s | F: Fullscreen | M: Mute | P: Picture-in-Picture
+    </div>
+
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script>
-        const player = videojs('video', {
+        let player;
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorContainer = document.getElementById('errorContainer');
+        const videoTitle = document.getElementById('videoTitle');
+
+        // Initialize Video.js player
+        player = videojs('video', {
             controls: true,
-            autoplay: true,
+            autoplay: false,
             preload: 'auto',
             fluid: true,
             playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+            muted: false,
             controlBar: {
                 children: [
                     'playToggle',
-                    'volumePanel',
                     'currentTimeDisplay',
                     'timeDivider',
                     'durationDisplay',
                     'progressControl',
+                    'volumePanel',
                     'playbackRateMenuButton',
-                    'qualitySelector',
                     'fullscreenToggle'
                 ]
             }
+        }, function() {
+            console.log('Video.js player initialized');
         });
 
         player.ready(function() {
-            console.log('Player ready');
-            this.play();
+            console.log('Player ready - attempting to load video');
+            loadingSpinner.style.display = 'block';
+        });
+
+        player.on('play', function() {
+            console.log('Video playing');
+            loadingSpinner.style.display = 'none';
+            errorContainer.classList.remove('show');
+        });
+
+        player.on('pause', function() {
+            console.log('Video paused');
+        });
+
+        player.on('timeupdate', function() {
+            loadingSpinner.style.display = 'none';
+        });
+
+        player.on('loadstart', function() {
+            console.log('Loading video...');
+            loadingSpinner.style.display = 'block';
+        });
+
+        player.on('canplay', function() {
+            console.log('Video can play');
+            loadingSpinner.style.display = 'none';
         });
 
         player.on('error', function() {
             console.error('Video error:', player.error());
+            loadingSpinner.style.display = 'none';
+            errorContainer.classList.add('show');
+            
+            const errorCode = player.error().code;
+            const errorMessages = {
+                1: 'The video has been aborted.',
+                2: 'A network error caused the video download to fail part-way.',
+                3: 'The video playback was aborted due to a corruption problem or because the video used features your browser did not support.',
+                4: 'The video format is not supported. Note: .mkv files are not natively supported in HTML5. Consider converting to .mp4 or .webm'
+            };
+            
+            document.getElementById('errorMessage').innerHTML = 
+                errorMessages[errorCode] || 'An unknown error occurred. Please try again.';
+        });
+
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', () => {
+            history.back();
+        });
+
+        // Show shortcuts hint on hover
+        const playerWrapper = document.querySelector('.player-wrapper');
+        playerWrapper.addEventListener('mouseenter', () => {
+            document.getElementById('shortcutsHint').classList.add('show');
+        });
+
+        playerWrapper.addEventListener('mouseleave', () => {
+            document.getElementById('shortcutsHint').classList.remove('show');
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.key === ' ') { e.preventDefault(); player.paused() ? player.play() : player.pause(); }
-            if (e.key === 'ArrowLeft') { player.currentTime(player.currentTime() - 10); }
-            if (e.key === 'ArrowRight') { player.currentTime(player.currentTime() + 10); }
-            if (e.key === 'f') { player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen(); }
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    player.paused() ? player.play() : player.pause();
+                } else if (e.key === 'ArrowLeft') {
+                    player.currentTime(Math.max(0, player.currentTime() - 10));
+                } else if (e.key === 'ArrowRight') {
+                    player.currentTime(player.currentTime() + 10);
+                } else if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    player.isFullscreen() ? player.exitFullscreen() : player.requestFullscreen();
+                } else if (e.key === 'm' || e.key === 'M') {
+                    e.preventDefault();
+                    player.muted(!player.muted());
+                } else if (e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    if (document.pictureInPictureEnabled) {
+                        document.pictureInPictureElement ? 
+                            document.exitPictureInPicture() : 
+                            player.el().querySelector('video').requestPictureInPicture();
+                    }
+                }
+            }
+        });
+
+        // Retry playback
+        function retryPlayback() {
+            errorContainer.classList.remove('show');
+            loadingSpinner.style.display = 'block';
+            player.load();
+            player.play().catch(e => console.log('Playback failed:', e));
+        }
+
+        // CORS alternative: Try to load with crossOrigin attribute
+        const videoElement = document.getElementById('video');
+        videoElement.crossOrigin = 'anonymous';
+
+        // Auto-hide info overlay
+        let infoTimeout;
+        playerWrapper.addEventListener('mousemove', () => {
+            document.getElementById('videoInfo').classList.add('show');
+            clearTimeout(infoTimeout);
+            infoTimeout = setTimeout(() => {
+                if (!player.paused()) {
+                    document.getElementById('videoInfo').classList.remove('show');
+                }
+            }, 3000);
         });
     </script>
 </body>
